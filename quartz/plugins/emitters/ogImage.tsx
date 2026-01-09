@@ -12,6 +12,9 @@ import { BuildCtx } from "../../util/ctx"
 import { QuartzPluginData } from "../vfile"
 import fs from "node:fs/promises"
 import { styleText } from "util"
+import { formatDate, getDate } from "../../components/Date"
+import readingTime from "reading-time"
+import { getFontSpecificationName } from "../../util/theme"
 
 const defaultOptions: SocialImageOptions = {
   colorScheme: "lightMode",
@@ -19,6 +22,179 @@ const defaultOptions: SocialImageOptions = {
   height: 630,
   imageStructure: defaultImage,
   excludeRoot: false,
+}
+
+// Custom image structure for black background and no branding
+const coverImage: SocialImageOptions["imageStructure"] = ({
+  cfg,
+  userOpts,
+  title,
+  description,
+  fileData,
+}) => {
+  const { colorScheme } = userOpts
+  const fontBreakPoint = 32
+  const useSmallerFont = title.length > fontBreakPoint
+
+  const rawDate = getDate(cfg, fileData)
+  const date = rawDate ? formatDate(rawDate, cfg.locale) : null
+
+  const { minutes } = readingTime(fileData.text ?? "")
+  const readingTimeText = i18n(cfg.locale).components.contentMeta.readingTime({
+    minutes: Math.ceil(minutes),
+  })
+
+  const tags = fileData.frontmatter?.tags ?? []
+  const bodyFont = getFontSpecificationName(cfg.theme.typography.body)
+  const headerFont = getFontSpecificationName(cfg.theme.typography.header)
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        width: "100%",
+        backgroundColor: "#000000", // Black background
+        padding: "2.5rem",
+        fontFamily: bodyFont,
+        color: "#FFFFFF", // White text
+      }}
+    >
+      {/* Title Section */}
+      <div
+        style={{
+          display: "flex",
+          marginTop: "1rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <h1
+          style={{
+            margin: 0,
+            fontSize: useSmallerFont ? 64 : 72,
+            fontFamily: headerFont,
+            fontWeight: 700,
+            color: "#FFFFFF",
+            lineHeight: 1.2,
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 2,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {title}
+        </h1>
+      </div>
+
+      {/* Description Section */}
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          fontSize: 36,
+          color: "#CCCCCC",
+          lineHeight: 1.4,
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 5,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {description}
+        </p>
+      </div>
+
+      {/* Footer with Metadata */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: "2rem",
+          paddingTop: "2rem",
+          borderTop: `1px solid #333333`,
+        }}
+      >
+        {/* Left side - Date and Reading Time */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "2rem",
+            color: "#AAAAAA",
+            fontSize: 28,
+          }}
+        >
+          {date && (
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <svg
+                style={{ marginRight: "0.5rem" }}
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              {date}
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <svg
+              style={{ marginRight: "0.5rem" }}
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            {readingTimeText}
+          </div>
+        </div>
+
+        {/* Right side - Tags */}
+        <div
+          style={{
+            display: "flex",
+            gap: "0.5rem",
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+            maxWidth: "60%",
+          }}
+        >
+          {tags.slice(0, 3).map((tag: string) => (
+            <div
+              style={{
+                display: "flex",
+                padding: "0.5rem 1rem",
+                backgroundColor: "#222222",
+                color: "#FFFFFF",
+                borderRadius: "10px",
+                fontSize: 24,
+              }}
+            >
+              #{tag}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /**
@@ -95,14 +271,14 @@ async function processOgImage(
   return write({
     ctx,
     content: stream,
-    slug: `${slug}-og-image` as FullSlug,
+    slug: `${slug}-cover` as FullSlug,
     ext: ".webp",
   })
 }
 
 export const CustomOgImagesEmitterName = "CustomOgImages"
 export const CustomOgImages: QuartzEmitterPlugin<Partial<SocialImageOptions>> = (userOpts) => {
-  const fullOptions = { ...defaultOptions, ...userOpts }
+  const fullOptions = { ...defaultOptions, ...userOpts, imageStructure: coverImage }
 
   return {
     name: CustomOgImagesEmitterName,
@@ -154,9 +330,9 @@ export const CustomOgImages: QuartzEmitterPlugin<Partial<SocialImageOptions>> = 
             }
 
             const generatedOgImagePath = isRealFile
-              ? `https://${baseUrl}/${pageData.slug!}-og-image.webp`
+              ? `https://${baseUrl}/${pageData.slug!}-cover.webp`
               : undefined
-            const defaultOgImagePath = `https://${baseUrl}/static/og-image.png`
+            const defaultOgImagePath = `https://${baseUrl}/static/cover.png`
             const ogImagePath = userDefinedOgImagePath ?? generatedOgImagePath ?? defaultOgImagePath
             const ogImageMimeType = `image/${getFileExtension(ogImagePath) ?? "png"}`
             return (
