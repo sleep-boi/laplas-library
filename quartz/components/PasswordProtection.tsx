@@ -32,10 +32,10 @@ const PasswordProtection: QuartzComponent = ({ fileData }: QuartzComponentProps)
           <p>This page is protected. Please enter the password.</p>
           <input type="password" id="password-input" placeholder="Password" />
           <button id="password-submit">Unlock</button>
-          <p id="password-error" style="color: red; display: none; margin-top: 10px;">Incorrect password</p>
+          <p id="password-error" style="display: none; margin-top: 10px;">Incorrect password</p>
         </div>
       </div>
-      <script dangerouslySetInnerHTML={{__html: 
+      <script dangerouslySetInnerHTML={{__html: `
         (function() {
           const correctHash = "${passwordHash}";
           const pageId = "${id}";
@@ -90,13 +90,13 @@ const PasswordProtection: QuartzComponent = ({ fileData }: QuartzComponentProps)
   )
 }
 
-PasswordProtection.css = 
+PasswordProtection.css = `
 body.is-locked {
   overflow: hidden;
 }
 
 body.is-locked #quartz-body {
-  filter: blur(20px);
+  filter: blur(20px) grayscale(100%);
   pointer-events: none;
   user-select: none;
 }
@@ -108,11 +108,10 @@ body.is-locked #quartz-body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   z-index: 10000;
   justify-content: center;
   align-items: center;
-  backdrop-filter: blur(5px);
 }
 
 body.is-locked .password-overlay {
@@ -120,23 +119,26 @@ body.is-locked .password-overlay {
 }
 
 .password-modal {
-  background: var(--light);
+  background: white;
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
   text-align: center;
   max-width: 400px;
   width: 90%;
-  border: 1px solid var(--lightgray);
+  border: 2px solid black;
+  box-shadow: 8px 8px 0px rgba(0,0,0,1);
 }
 
 .password-modal h2 {
   margin-top: 0;
-  color: var(--dark);
+  color: black;
+  text-transform: uppercase;
+  font-family: monospace;
+  letter-spacing: 1px;
 }
 
 .password-modal p {
-  color: var(--darkgray);
+  color: black;
+  font-family: monospace;
 }
 
 .password-modal input {
@@ -144,27 +146,44 @@ body.is-locked .password-overlay {
   width: 100%;
   padding: 0.8rem;
   margin: 1rem 0;
-  border: 1px solid var(--gray);
-  border-radius: 4px;
-  background: var(--light);
-  color: var(--dark);
+  border: 2px solid black;
+  border-radius: 0;
+  background: white;
+  color: black;
   font-size: 1rem;
+  font-family: monospace;
+  outline: none;
+}
+
+.password-modal input:focus {
+  background: #f0f0f0;
 }
 
 .password-modal button {
-  background: var(--secondary);
+  background: black;
   color: white;
-  border: none;
+  border: 2px solid black;
   padding: 0.8rem 1.5rem;
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   font-weight: bold;
   font-size: 1rem;
-  transition: background 0.2s;
+  text-transform: uppercase;
+  font-family: monospace;
+  width: 100%;
+  transition: all 0.2s;
 }
 
 .password-modal button:hover {
-  background: var(--tertiary);
+  background: white;
+  color: black;
+}
+
+#password-error {
+  color: black !important;
+  font-weight: bold;
+  font-family: monospace;
+  text-transform: uppercase;
 }
 `
 
