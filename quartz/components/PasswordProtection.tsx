@@ -35,7 +35,7 @@ const PasswordProtection: QuartzComponent = ({ fileData }: QuartzComponentProps)
           <p id="password-error" style="color: red; display: none; margin-top: 10px;">Incorrect password</p>
         </div>
       </div>
-      <script dangerouslySetInnerHTML={{__html: `
+      <script dangerouslySetInnerHTML={{__html: 
         (function() {
           const correctHash = "${passwordHash}";
           const pageId = "${id}";
@@ -90,7 +90,7 @@ const PasswordProtection: QuartzComponent = ({ fileData }: QuartzComponentProps)
   )
 }
 
-PasswordProtection.css = `
+PasswordProtection.css = 
 body.is-locked {
   overflow: hidden;
 }
