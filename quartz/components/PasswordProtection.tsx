@@ -7,165 +7,209 @@ function hashPassword(password: string): string {
   return createHash("sha256").update(password).digest("hex")
 }
 
-const PasswordProtection: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
-  const tags = fileData.frontmatter?.tags || []
-  const lockedTag = tags.find((tag) => tag.startsWith("locked:"))
+export default (() => {
+  const PasswordProtection: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
+    // Check for "locked:id" tag
+    const tags = fileData.frontmatter?.tags || []
+    const lockedTag = tags.find((tag) => tag.startsWith("locked:"))
 
-  if (!lockedTag) {
-    return null
-  }
+    if (!lockedTag) {
+      return null
+    }
 
-  const id = lockedTag.split(":")[1]
-  const password = passwords[id]
+    const id = lockedTag.split(":")[1]
+    const password = (passwords as Record<string, string>)[id]
 
-  if (!password) {
-    return null 
-  }
+    // If no password defined for this ID, do not lock (or you could choose to lock by default)
+    if (!password) {
+      return null 
+    }
 
-  const passwordHash = hashPassword(password)
+    const passwordHash = hashPassword(password)
 
-  return (
-    <div class="password-protection-container">
-      <div class="password-overlay">
-        <div class="password-modal">
-          <h2>Restricted Access</h2>
-          <p>This page is protected. Please enter the password.</p>
-          <input type="password" id="password-input" placeholder="Password" />
-          <button id="password-submit">Unlock</button>
-          <p id="password-error" style="color: red; display: none; margin-top: 10px;">Incorrect password</p>
+    return (
+      <div class="password-protection-container" data-id={id} data-hash={passwordHash}>
+        <div class="password-overlay">
+          <div class="password-modal">
+            <h2>🔒 Restricted Access</h2>
+            <p>This content is protected. Please enter the password to view.</p>
+            <input type="password" class="password-input" placeholder="Enter Password" />
+            <button class="password-submit">Unlock</button>
+            <p class="password-error" style="display: none; color: #e5484d; margin-top: 10px; font-size: 0.9rem;">Incorrect password</p>
+          </div>
         </div>
       </div>
-      <script dangerouslySetInnerHTML={{__html: `
-        (function() {
-          const correctHash = "${passwordHash}";
-          const pageId = "${id}";
-          const storageKey = 'quartz_unlocked_' + pageId;
+    )
+  }
 
-          // Check status immediately
-          if (sessionStorage.getItem(storageKey) === 'true') {
-             // Already unlocked
-          } else {
-             document.body.classList.add('is-locked');
-          }
+  PasswordProtection.afterDOMLoaded = `
+    const container = document.querySelector('.password-protection-container')
+    if (!container) return
 
-          async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            return hashHex;
-          }
+    const pageId = container.dataset.id
+    const correctHash = container.dataset.hash
+    const storageKey = 'quartz_unlocked_' + pageId
+    const body = document.body
+    
+    const overlay = container.querySelector('.password-overlay')
+    const input = container.querySelector('.password-input')
+    const btn = container.querySelector('.password-submit')
+    const err = container.querySelector('.password-error')
 
-          document.addEventListener('DOMContentLoaded', () => {
-             // Re-check just in case, though script runs after parsing
-             if (sessionStorage.getItem(storageKey) !== 'true') {
-                 document.body.classList.add('is-locked');
-             }
+    // Helper to lock/unlock
+    function unlock() {
+      body.classList.remove('is-locked')
+      container.style.display = 'none'
+    }
 
-             const btn = document.getElementById('password-submit');
-             const input = document.getElementById('password-input');
-             const err = document.getElementById('password-error');
+    function lock() {
+      body.classList.add('is-locked')
+      container.style.display = 'block'
+      // Focus input specifically if it's visible
+      if (input) setTimeout(() => input.focus(), 100)
+    }
 
-             if (!btn || !input) return;
+    // Check status immediately on load
+    if (localStorage.getItem(storageKey) === 'true') {
+      unlock()
+    } else {
+      lock()
+    }
 
-             async function checkPassword() {
-                const val = input.value;
-                const hashed = await sha256(val);
-                if (hashed === correctHash) {
-                    sessionStorage.setItem(storageKey, 'true');
-                    document.body.classList.remove('is-locked');
-                } else {
-                    err.style.display = 'block';
-                }
-             }
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message)
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    }
 
-             btn.addEventListener('click', checkPassword);
-             input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') checkPassword();
-             });
-          });
-        })();
-      `}} />
-    </div>
-  )
-}
+    async function checkPassword() {
+      const val = input.value
+      const hashed = await sha256(val)
+      if (hashed === correctHash) {
+        localStorage.setItem(storageKey, 'true')
+        unlock()
+      } else {
+        err.style.display = 'block'
+        input.value = ''
+        input.focus()
+        // Shake animation effect
+        const modal = container.querySelector('.password-modal')
+        modal.animate([
+          { transform: 'translateX(0)' },
+          { transform: 'translateX(-5px)' },
+          { transform: 'translateX(5px)' },
+          { transform: 'translateX(0)' }
+        ], { duration: 300 })
+      }
+    }
 
-PasswordProtection.css = `
-body.is-locked {
-  overflow: hidden;
-}
+    if (btn) btn.addEventListener('click', checkPassword)
+    if (input) {
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkPassword()
+      })
+    }
+  `
 
-body.is-locked #quartz-body {
-  filter: blur(20px);
-  pointer-events: none;
-  user-select: none;
-}
+  PasswordProtection.css = `
+  body.is-locked {
+    overflow: hidden;
+    height: 100vh;
+  }
 
-.password-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 10000;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(5px);
-}
+  /* Blur all direct children of body EXCEPT the password container */
+  /* This is more robust than selecting #quartz-body */
+  body.is-locked > *:not(.password-protection-container) {
+    filter: blur(15px);
+    pointer-events: none;
+    user-select: none;
+  }
 
-body.is-locked .password-overlay {
-  display: flex;
-}
+  .password-protection-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    pointer-events: auto;
+  }
 
-.password-modal {
-  background: var(--light);
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
-  text-align: center;
-  max-width: 400px;
-  width: 90%;
-  border: 1px solid var(--lightgray);
-}
+  .password-overlay {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-.password-modal h2 {
-  margin-top: 0;
-  color: var(--dark);
-}
+  .password-modal {
+    background: var(--light);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    max-width: 350px;
+    width: 90%;
+    border: 1px solid var(--lightgray);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
 
-.password-modal p {
-  color: var(--darkgray);
-}
+  .password-modal h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--dark);
+  }
 
-.password-modal input {
-  display: block;
-  width: 100%;
-  padding: 0.8rem;
-  margin: 1rem 0;
-  border: 1px solid var(--gray);
-  border-radius: 4px;
-  background: var(--light);
-  color: var(--dark);
-  font-size: 1rem;
-}
+  .password-modal p {
+    margin: 0;
+    color: var(--darkgray);
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
 
-.password-modal button {
-  background: var(--secondary);
-  color: white;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 1rem;
-  transition: background 0.2s;
-}
+  .password-modal input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--gray);
+    border-radius: 6px;
+    background: var(--light);
+    color: var(--dark);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
 
-.password-modal button:hover {
-  background: var(--tertiary);
-}
-`
+  .password-modal input:focus {
+    border-color: var(--secondary);
+  }
 
-export default (() => PasswordProtection) satisfies QuartzComponentConstructor
+  .password-modal button {
+    background: var(--secondary);
+    color: var(--light);
+    border: none;
+    padding: 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .password-modal button:hover {
+    background: var(--tertiary);
+  }
+
+  .password-modal button:active {
+    transform: scale(0.98);
+  }
+  `
+
+  return PasswordProtection
+}) satisfies QuartzComponentConstructor
+
