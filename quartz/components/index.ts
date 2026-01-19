@@ -24,6 +24,7 @@ import Comments from "./Comments"
 import Flex from "./Flex"
 import ConditionalRender from "./ConditionalRender"
 import PasswordProtection from "./PasswordProtection"
+import NewsTicker from "./NewsTicker"
 
 export {
   ArticleTitle,
