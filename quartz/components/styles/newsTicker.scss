@@ -1,16 +1,16 @@
 @use "../../styles/variables.scss" as *;
 
 .news-ticker-wrapper {
-  background-color: #000; // Черный фон
-  color: #0f0; // Ядовито-зеленый текст (как в терминале), или поставь #fff для белого
+  background-color: #000; 
+  color: #fff;
   width: 100%;
-  height: 40px; // Фиксированная высота
+  height: 40px; 
   overflow: hidden;
   position: relative;
-  z-index: 1000; // Поверх всего
+  z-index: 1000; 
   display: flex;
   align-items: center;
-  font-family: "Courier New", Courier, monospace; // Другой шрифт
+  font-family: "Courier New", Courier, monospace; 
   font-size: 0.9rem;
   border-bottom: 1px solid #333;
 }
@@ -27,11 +27,9 @@
 .news-ticker-content {
   display: inline-block;
   white-space: nowrap;
-  padding-left: 100%; // Начинаем за пределами экрана справа
-  animation: ticker-scroll 30s linear infinite; // Скорость анимации
-  
-  // Добавляем отступ, чтобы текст не слипался, если мы решим зациклить
-  padding-right: 5rem; 
+  padding-left: 100%; 
+  animation: ticker-scroll 30s linear infinite; 
+  padding-right: 3rem; 
 }
 
 // Кнопка закрытия
