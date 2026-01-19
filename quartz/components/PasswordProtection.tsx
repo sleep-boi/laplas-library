@@ -3,7 +3,7 @@ import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } fro
 import script from "./scripts/passwordProtection.inline"
 // @ts-ignore
 import style from "./styles/passwordProtection.scss"
-import passwords from "../passwords.json"
+import passwords from "./passwords.json"
 
 interface PasswordMap {
   [key: string]: string
