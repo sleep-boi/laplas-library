@@ -10,8 +10,10 @@ interface PasswordMap {
 }
 
 const PasswordProtection: QuartzComponent = ({ fileData, displayClass }: QuartzComponentProps) => {
-  // Читаем password_id из фронтметтера
+  // Read password_id and optional message from frontmatter
   const passwordId = fileData.frontmatter?.password_id as string | undefined
+  const customMsg = fileData.frontmatter?.password_msg as string | undefined
+  
   if (!passwordId) return null
 
   const passwordMap = passwords as PasswordMap
@@ -19,13 +21,13 @@ const PasswordProtection: QuartzComponent = ({ fileData, displayClass }: QuartzC
 
   if (!password) return null
 
-  // Этот скрипт выполняется мгновенно, чтобы скрыть контент до загрузки React/JS
+  // This script runs instantly to block content before React/JS loads
   const inlineCheck = `
     (function() {
       var pid = "${passwordId}";
-      // Если в сессии нет метки "unlocked", вешаем класс блокировки на body
       if (sessionStorage.getItem("quartz-locked-" + pid) !== "unlocked") {
         document.body.classList.add("is-locked");
+        document.documentElement.classList.add("is-locked");
       }
     })();
   `
@@ -37,11 +39,12 @@ const PasswordProtection: QuartzComponent = ({ fileData, displayClass }: QuartzC
         <div class="lock-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
         </div>
-        <h2>Restricted Access</h2>
-        <p>This note is password protected.</p>
+        <h2>АРХИВ ЗАЩИЩЕН</h2>
+        <p>ДАННАЯ ЧАСТЬ БИБЛИОТЕКИ НАХОДИТСЯ ПОД СТРОГИМ КОНТРОЛЕМ СВЯТЫХ ПИЛИГРИМОВ! ВО СЛАВУ ВЕЛИКОМУ АРХИВАРИУСУ ЛАПЛАСУ!</p>
+        {customMsg && <p class="password-custom-msg">{customMsg}</p>}
         <form>
-          <input type="password" placeholder="Enter Password" autoFocus />
-          <button type="submit">Unlock</button>
+          <input type="password" placeholder="Введите ключ доступа..." autoFocus />
+          <button type="submit">РАЗБЛОКИРОВАТЬ</button>
         </form>
         <div class="error-msg"></div>
       </div>

@@ -17,19 +17,16 @@
 
 .news-ticker-track {
   display: flex;
-  white-space: nowrap;
-  overflow: hidden;
-  position: absolute;
-  left: 0;
-  width: 100%;
+  width: max-content;
+  animation: ticker-scroll 60s linear infinite;
+  /* Ensure the track is wide enough */
 }
 
 .news-ticker-content {
-  display: inline-block;
   white-space: nowrap;
-  padding-left: 100%; 
-  animation: ticker-scroll 30s linear infinite; 
-  padding-right: 3rem; 
+  padding-right: 4rem; /* Gap between repetitions */
+  display: flex;
+  align-items: center;
 }
 
 // Кнопка закрытия
@@ -60,12 +57,17 @@
   }
 }
 
+/* 
+  We will repeat the content 4 times in the TSX.
+  We animate from 0 to -25% (which corresponds to the width of one segment).
+  This creates a seamless loop.
+*/
 @keyframes ticker-scroll {
   0% {
-    transform: translate3d(0, 0, 0);
+    transform: translateX(0);
   }
   100% {
-    transform: translate3d(-100%, 0, 0);
+    transform: translateX(-25%);
   }
 }
 
@@ -75,8 +77,8 @@
     font-size: 0.8rem;
   }
   
-  // Ускоряем на мобильных, так как экран уже
-  .news-ticker-content {
-    animation-duration: 15s;
+  // Faster animation on mobile if desired, or keep it consistent
+  .news-ticker-track {
+    animation-duration: 40s;
   }
 }

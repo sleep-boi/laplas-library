@@ -1,5 +1,7 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import style from "./styles/newsTicker.scss"
+// @ts-ignore
+import script from "./scripts/newsTicker.inline"
 import fs from "fs"
 import path from "path"
 
@@ -31,19 +33,18 @@ export default ((userOpts?: Partial<Options>) => {
   const NewsTicker: QuartzComponent = ({ displayClass }: QuartzComponentProps) => {
     const newsText = getNewsContent()
 
-    // Если новостей нет или файл пустой — ничего не рендерим
     if (!newsText) return null
+
+    const repetitions = [1, 2, 3, 4]
 
     return (
       <div class={`news-ticker-wrapper ${displayClass ?? ""}`} id="news-ticker-container">
         <div class="news-ticker-track">
-          <div class="news-ticker-content">
-            {newsText}
-          </div>
-          {/* Дублируем контент для плавности (опционально, зависит от CSS) */}
-          <div class="news-ticker-content" aria-hidden="true">
-            {newsText}
-          </div>
+          {repetitions.map((i) => (
+            <div class="news-ticker-content" aria-hidden={i > 1 ? "true" : undefined}>
+              {newsText}
+            </div>
+          ))}
         </div>
         
         <button id="news-ticker-close" aria-label="Close news">
@@ -52,34 +53,11 @@ export default ((userOpts?: Partial<Options>) => {
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
-
-        {/* Inline скрипт для обработки закрытия */}
-        <script dangerouslySetInnerHTML={{__html: `
-          (function() {
-            const container = document.getElementById('news-ticker-container');
-            const closeBtn = document.getElementById('news-ticker-close');
-            
-            const isClosed = localStorage.getItem('quartz-news-closed');
-            
-            if (isClosed === 'true') {
-              container.style.display = 'none';
-            } else {
-              // Если не закрыто, добавляем класс visible для анимации появления (если нужно)
-              container.classList.add('visible');
-            }
-
-            if (closeBtn) {
-              closeBtn.addEventListener('click', () => {
-                container.style.display = 'none';
-                localStorage.setItem('quartz-news-closed', 'true');
-              });
-            }
-          })();
-        `}} />
       </div>
     )
   }
 
   NewsTicker.css = style
+  NewsTicker.afterDOMLoaded = script
   return NewsTicker
 }) satisfies QuartzComponentConstructor
