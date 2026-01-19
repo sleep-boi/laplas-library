@@ -9,10 +9,11 @@ function hashPassword(password: string): string {
 
 export default (() => {
   const PasswordProtection: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
-    // Check for "locked:id" tag
+    // 1. Ищем тег locked:ID
     const tags = fileData.frontmatter?.tags || []
     const lockedTag = tags.find((tag) => tag.startsWith("locked:"))
 
+    // Если тега нет — компонент не рендерится (и это нормально)
     if (!lockedTag) {
       return null
     }
@@ -20,8 +21,9 @@ export default (() => {
     const id = lockedTag.split(":")[1]
     const password = (passwords as Record<string, string>)[id]
 
-    // If no password defined for this ID, do not lock (or you could choose to lock by default)
+    // Если для этого ID нет пароля в JSON — не блокируем (чтобы не сломать доступ навсегда)
     if (!password) {
+      console.warn(`PasswordProtection: Found tag locked:${id}, but no password in passwords.json`)
       return null 
     }
 
@@ -44,33 +46,39 @@ export default (() => {
 
   PasswordProtection.afterDOMLoaded = `
     const container = document.querySelector('.password-protection-container')
-    if (!container) return
+    if (!container) {
+        // Если контейнера нет, значит либо нет тега, либо компонент не загрузился
+        // console.log('PasswordProtection: No locked container found on this page.')
+        return
+    }
 
     const pageId = container.dataset.id
     const correctHash = container.dataset.hash
     const storageKey = 'quartz_unlocked_' + pageId
     const body = document.body
     
-    const overlay = container.querySelector('.password-overlay')
     const input = container.querySelector('.password-input')
     const btn = container.querySelector('.password-submit')
     const err = container.querySelector('.password-error')
 
-    // Helper to lock/unlock
     function unlock() {
+      console.log('PasswordProtection: Unlocking page...')
       body.classList.remove('is-locked')
       container.style.display = 'none'
     }
 
     function lock() {
+      console.log('PasswordProtection: Locking page...')
       body.classList.add('is-locked')
       container.style.display = 'block'
-      // Focus input specifically if it's visible
       if (input) setTimeout(() => input.focus(), 100)
     }
 
-    // Check status immediately on load
-    if (localStorage.getItem(storageKey) === 'true') {
+    // Проверка при загрузке
+    const isUnlocked = localStorage.getItem(storageKey) === 'true'
+    console.log('PasswordProtection status:', isUnlocked ? 'Unlocked' : 'Locked')
+
+    if (isUnlocked) {
       unlock()
     } else {
       lock()
@@ -86,14 +94,18 @@ export default (() => {
     async function checkPassword() {
       const val = input.value
       const hashed = await sha256(val)
+      
+      // Сравниваем хеши
       if (hashed === correctHash) {
         localStorage.setItem(storageKey, 'true')
         unlock()
       } else {
+        console.log('PasswordProtection: Wrong password')
         err.style.display = 'block'
         input.value = ''
         input.focus()
-        // Shake animation effect
+        
+        // Анимация тряски
         const modal = container.querySelector('.password-modal')
         modal.animate([
           { transform: 'translateX(0)' },
@@ -113,18 +125,13 @@ export default (() => {
   `
 
   PasswordProtection.css = `
+  /* Блокируем скролл, когда закрыто */
   body.is-locked {
-    overflow: hidden;
-    height: 100vh;
+    overflow: hidden !important;
+    height: 100vh !important;
   }
 
-  /* Blur all direct children of body EXCEPT the password container */
-  /* This is more robust than selecting #quartz-body */
-  body.is-locked > *:not(.password-protection-container) {
-    filter: blur(15px);
-    pointer-events: none;
-    user-select: none;
-  }
+  /* ВАЖНО: Убран сложный селектор блюра, который ломал отображение */
 
   .password-protection-container {
     position: fixed;
@@ -132,25 +139,31 @@ export default (() => {
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 9999;
+    z-index: 99999; /* Очень высокий Z-index */
     pointer-events: auto;
+    display: none; /* Скрыто по умолчанию, скрипт покажет */
   }
 
   .password-overlay {
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
+    /* Делаем фон сплошным или сильно размытым, чтобы скрыть контент */
+    background-color: var(--light); 
     display: flex;
     justify-content: center;
     align-items: center;
+  }
+  
+  /* Темная тема - меняем фон */
+  :root[saved-theme="dark"] .password-overlay {
+      background-color: var(--dark);
   }
 
   .password-modal {
     background: var(--light);
     padding: 2rem;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
     text-align: center;
     max-width: 350px;
     width: 90%;
@@ -158,6 +171,8 @@ export default (() => {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    position: relative;
+    z-index: 100000;
   }
 
   .password-modal h2 {
@@ -182,11 +197,7 @@ export default (() => {
     color: var(--dark);
     font-size: 1rem;
     outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .password-modal input:focus {
-    border-color: var(--secondary);
+    box-sizing: border-box;
   }
 
   .password-modal button {
@@ -198,18 +209,12 @@ export default (() => {
     cursor: pointer;
     font-weight: 600;
     font-size: 1rem;
-    transition: background 0.2s, transform 0.1s;
   }
 
   .password-modal button:hover {
     background: var(--tertiary);
   }
-
-  .password-modal button:active {
-    transform: scale(0.98);
-  }
   `
 
   return PasswordProtection
 }) satisfies QuartzComponentConstructor
-
