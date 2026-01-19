@@ -53,4 +53,5 @@ export {
   Flex,
   ConditionalRender,
   PasswordProtection,
+  NewsTicker,
 }
