@@ -1,5 +1,6 @@
 import { PageLayout, SharedLayout } from "./quartz/cfg"
 import * as Component from "./quartz/components"
+import NewsTicker from "./quartz/components/NewsTicker"
 
 // components shared across all pages
 export const sharedPageComponents: SharedLayout = {
@@ -8,7 +9,7 @@ export const sharedPageComponents: SharedLayout = {
   afterBody: [Component.PasswordProtection()],
   footer: Component.Footer({
     links: {
-      "Discord Community": "https://discord.gg/cU6NAyV9",
+      "Discord": "https://discord.gg/cU6NAyV9",
     },
   }),
 }
@@ -17,6 +18,7 @@ export const sharedPageComponents: SharedLayout = {
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [
     Component.ConditionalRender({
+      NewsTicker({ filePath: "content/Архив/Private/news.md" }),
       component: Component.Breadcrumbs(),
       condition: (page) => page.fileData.slug !== "index",
     }),
