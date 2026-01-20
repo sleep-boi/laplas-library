@@ -1,10 +1,22 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import { classNames } from "../util/lang"
+import { joinSegments, pathToRoot } from "../util/path"
 
 const ArticleTitle: QuartzComponent = ({ fileData, displayClass }: QuartzComponentProps) => {
   const title = fileData.frontmatter?.title
+  const icon = fileData.frontmatter?.icon
   if (title) {
-    return <h1 class={classNames(displayClass, "article-title")}>{title}</h1>
+    return (
+      <h1 class={classNames(displayClass, "article-title")}>
+        {icon && (
+          <img
+            src={joinSegments(pathToRoot(fileData.slug!), "static/icons", icon)}
+            class="article-icon"
+          />
+        )}{" "}
+        {title}
+      </h1>
+    )
   } else {
     return null
   }

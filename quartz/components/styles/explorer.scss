@@ -114,32 +114,63 @@ button.desktop-explorer {
 .explorer-content {
   list-style: none;
   
-  // 1. Делаем этот блок флекс-контейнером, который занимает все место
+  // 1. Flex container occupying available space
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 0; // Критично для работы скролла внутри флекса
+  min-height: 0; 
   
-  // 2. Скролл переносим СЮДА
+  // 2. Scroll is handled here
   overflow-y: auto;
   overflow-x: hidden;
   
   margin-top: 0.5rem;
-  overscroll-behavior: contain; // Чтобы скролл не дергал всю страницу
+  overscroll-behavior: contain;
 
   & ul {
-    // 3. Убираем скролл с внутреннего списка
     overflow-y: visible; 
     
     list-style: none;
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    & li {
+      line-height: 1.4rem;
+      margin: 0;
+      display: block;
+      width: auto;      
+      max-width: 100%;
+    }
 
     & li > a {
       color: var(--dark);
       opacity: 0.75;
       pointer-events: all;
       transition: opacity 0.2s ease, color 0.2s ease;
+      display: inline-flex;
+      align-items: center; // Vertically center icon and text
+      line-height: 1.4rem;
+      padding: 0.2rem 0;
+      width: auto;            
+      
+      // === ИСПРАВЛЕНИЕ ДЛЯ ФАЙЛОВ ===
+      & > img, & > .explorer-icon {
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px;
+        max-width: 16px;
+        flex: 0 0 16px;          
+        object-fit: contain;
+        
+        // Сбрасываем внешние отступы, чтобы убрать "оранжевую зону"
+        margin: 0; 
+        margin-right: 0.5rem;
+        
+        display: block; 
+      }
 
       &.active {
         opacity: 1;
@@ -153,21 +184,19 @@ button.desktop-explorer {
     }
   }
 
-  // === NEW ANIMATION LOGIC ===
+  // === ANIMATION LOGIC ===
   .folder-outer {
     visibility: collapse;
     display: grid;
     grid-template-rows: 0fr;
     
-    // Используем cubic-bezier для более "дорогого" ощущения (быстро, потом плавно)
     transition: 
       grid-template-rows 0.4s cubic-bezier(0.25, 1, 0.5, 1),
       visibility 0.4s ease;
 
-    // Анимация содержимого внутри папки
     & > ul {
       opacity: 0;
-      transform: translateY(-10px); // Легкий сдвиг вверх при закрытии
+      transform: translateY(-10px);
       transition: 
         opacity 0.3s ease,
         transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
@@ -183,11 +212,9 @@ button.desktop-explorer {
     visibility: visible;
     grid-template-rows: 1fr;
     
-    // Когда открыто - полная непрозрачность и возврат на место
     & > ul {
       opacity: 1;
       transform: translateY(0);
-      // Небольшая задержка, чтобы грид успел начать открываться
       transition-delay: 0.05s; 
     }
   }
@@ -199,14 +226,14 @@ button.desktop-explorer {
   display: flex;
   align-items: center;
   user-select: none;
-  cursor: pointer; // Указываем, что на всю строку можно кликнуть
+  cursor: pointer;
 
   & div > a {
     color: var(--secondary);
     font-family: var(--headerFont);
     font-size: 0.95rem;
     font-weight: $semiBoldWeight;
-    line-height: 1.5rem;
+    line-height: 1.5rem; 
     display: inline-block;
     transition: color 0.2s ease;
   }
@@ -226,6 +253,21 @@ button.desktop-explorer {
     display: flex;
     align-items: center;
     font-family: var(--headerFont);
+
+    // === ИСПРАВЛЕНИЕ ДЛЯ ПАПОК ===
+    & img, & .explorer-icon {
+        width: 1em;
+        height: 1em;
+        min-width: 1em;
+        flex-shrink: 0;
+        object-fit: contain;
+        
+        // Сбрасываем внешние отступы и здесь
+        margin: 0;
+        margin-right: 0.5rem;
+        
+        display: block;
+    }
 
     & span {
       font-size: 0.95rem;
@@ -255,11 +297,11 @@ button.desktop-explorer {
 
 li:has(> .folder-outer:not(.open)) > .folder-container > svg {
   transform: rotate(-90deg);
-  opacity: 0.7; // Чуть тусклее, когда закрыто
+  opacity: 0.7;
 }
 
 li:has(> .folder-outer.open) > .folder-container > svg {
-    color: var(--tertiary); // Подсветка иконки при открытой папке
+    color: var(--tertiary);
 }
 
 .folder-icon:hover {
@@ -301,7 +343,6 @@ li:has(> .folder-outer.open) > .folder-container > svg {
         transform 200ms ease,
         visibility 200ms ease;
       overflow: hidden;
-      // На мобилках возвращаем скролл как был, так как там позиционирование другое
       overflow-y: auto; 
       padding: 4rem 0 2rem 0;
       height: 100dvh;
@@ -325,4 +366,27 @@ li:has(> .folder-outer.open) > .folder-container > svg {
   @media all and ($mobile) {
     overscroll-behavior: none;
   }
+}
+
+// === ICON FIX GLOBAL CLASS ===
+.explorer-icon {
+  width: 1em;
+  height: 1em;
+  min-width: 1em;
+  flex-shrink: 0;
+  margin: 0;
+  margin-right: 0.3rem;
+  
+  vertical-align: middle;
+  display: inline-block;
+  object-fit: contain;
+}
+
+.article-icon {
+  width: 1em;
+  height: 1em;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  display: inline-block;
+  object-fit: contain;
 }

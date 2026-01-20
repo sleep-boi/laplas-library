@@ -1,3 +1,9 @@
+async function sha256(message: string) {
+  const msgBuffer = new TextEncoder().encode(message)
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
+}
 
 const setupPasswordProtection = () => {
   const gate = document.getElementById("password-gate")
@@ -42,10 +48,13 @@ const setupPasswordProtection = () => {
       
       const newInput = newForm.querySelector("input") as HTMLInputElement
 
-      newForm.addEventListener("submit", (e) => {
+      newForm.addEventListener("submit", async (e) => {
         e.preventDefault() 
         
-        if (newInput.value === correctPass) {
+        // Hashing the input to compare with stored hash
+        const hashedInput = await sha256(newInput.value)
+
+        if (hashedInput === correctPass) {
           unlock()
         } else {
           if (errorMsg) errorMsg.textContent = "Неверный ключ доступа"

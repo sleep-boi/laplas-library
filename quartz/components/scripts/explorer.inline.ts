@@ -88,6 +88,14 @@ function createFileNode(currentSlug: FullSlug, node: FileTrieNode): HTMLLIElemen
   a.dataset.for = node.slug
   a.textContent = node.displayName
 
+  if (node.data?.icon) {
+    const icon = document.createElement("img")
+    icon.src = resolveRelative(currentSlug, `static/icons/${node.data.icon}` as FullSlug)
+    icon.classList.add("explorer-icon")
+    icon.alt = "" // decorative
+    a.prepend(icon)
+  }
+
   if (currentSlug === node.slug) {
     a.classList.add("active")
   }
