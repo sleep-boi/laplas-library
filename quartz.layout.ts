@@ -4,11 +4,11 @@ import * as Component from "./quartz/components"
 // Компоненты, общие для всех страниц
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
-  header: [],
+  header: [Component.NewsTicker({ filePath: "content/Архив/Private/news.md" })],
   afterBody: [Component.PasswordProtection()], // Твой компонент защиты паролем
   footer: Component.Footer({
     links: {
-      "Discord": "https://discord.gg/cU6NAyV9",
+      "Discord": "https://discord.gg/uNFbkgZ2kf",
     },
   }),
 }
@@ -16,7 +16,6 @@ export const sharedPageComponents: SharedLayout = {
 // Компоненты для страниц с контентом (заметки, статьи)
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [
-    Component.NewsTicker({ filePath: "content/Архив/Private/news.md" }),
     Component.Breadcrumbs(),
     Component.ArticleTitle(),
     Component.ContentMeta(),
